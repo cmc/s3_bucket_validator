@@ -1,5 +1,5 @@
 # s3_bucket_validator
-Obtains buckets with an internal account, tries to access (ListObjects) with an external account. Writes JSON of bucket name + contents returned to KAFKA for alerting.
+Obtains list of available s3 buckets with an internal account, then tries to access each bucket (ListObjects) with an external account. Writes JSON of bucket name + contents returned to KAFKA for alerting.
 
 Uses AWS Golang SDK
 
