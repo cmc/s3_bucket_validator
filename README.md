@@ -13,4 +13,4 @@ Writes JSON of bucket name + contents returned to KAFKA
 
 $ docker build -t s3test .
 
-$ docker run -it --rm --name s3test s3test
+$ docker run -it --rm -e "HOME=/home" -v $HOME/.aws:/home/.aws --name s3tester s3tester
