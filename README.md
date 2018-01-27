@@ -9,3 +9,6 @@ Requires aws credentials config file sections:
 [external-unprivileged-account]
 
 Writes JSON of bucket name + contents returned to KAFKA
+
+$ docker build -t s3test .
+$ docker run -it --rm --name s3test s3test
