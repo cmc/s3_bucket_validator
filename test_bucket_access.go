@@ -15,6 +15,7 @@ import (
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/s3"
     "github.com/fatih/color"
+    "github.com/Shopify/sarama"
 )
 
 // return list of all buckets with the key that we're using
@@ -56,7 +57,8 @@ func test_bucket_access(bucket string, region string) (*s3.ListObjectsOutput, er
     }
     if err == nil && resp != nil {
 	red("[!] WARNING, Access Granted to bucket: %s\n", bucket)
-         write_logfile(resp)
+        send_kafka(fmt.Sprintf("[!] WARNING, Access Granted to bucket: %s", bucket))
+        write_logfile(resp)
         fmt.Println(resp)
     }
     return resp, err
@@ -71,6 +73,39 @@ func write_logfile(l *s3.ListObjectsOutput) {
 
     log.SetOutput(f)
     log.Println(l)
+}
+func send_kafka(s string) bool {
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Retry.Max = 5
+
+	brokers := []string{"localhost:9092"}
+	config.Producer.Return.Successes = true
+	producer, err := sarama.NewSyncProducer(brokers, config)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := producer.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	topic := "s3_alerts"
+	msg := &sarama.ProducerMessage{
+		Topic: topic,
+		Value: sarama.StringEncoder(s),
+	}
+
+	partition, offset, err := producer.SendMessage(msg)
+	if err != nil {
+		panic(err)
+                return false
+	}
+
+	fmt.Printf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", topic, partition, offset)
+        return true
 }
 
 func main() {
