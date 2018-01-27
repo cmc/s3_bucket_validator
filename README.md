@@ -1,8 +1,9 @@
 # s3_bucket_validator
 Obtains list of available s3 buckets with an internal account, then tries to access each bucket (ListObjects) with an external account. Writes JSON of bucket name + contents returned to KAFKA for alerting.
 
-Internal account used should have access to list buckets.
-External account should NOT have access to buckets if they are locked down as intended, thus, successful accesses are alerts.
+Internal account used should at a minimum have access to list buckets.
+
+External account used should NOT have access to the buckets in the list if they are locked down, thus, successful accesses by the external account can be used to generate alerts.
 
 Uses AWS Golang SDK
 
