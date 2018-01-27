@@ -1,7 +1,6 @@
-//cmc
+// cmc
 //TODO:
-//  1. Send full message to kafka as JSON vs single line - include bucket objects listed.
-//  2. Integrate goroutines & channels to perform all s3 checks concurrently. save time, profit more.
+//  1. Integrate goroutines & channels to perform all s3 checks concurrently. save time, profit more.
 
 package main
 
@@ -11,6 +10,7 @@ import (
     "regexp"
     "strings"
     "os"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/s3"
@@ -57,7 +57,11 @@ func test_bucket_access(bucket string, region string) (*s3.ListObjectsOutput, er
     }
     if err == nil && resp != nil {
 	red("[!] WARNING, Access Granted to bucket: %s\n", bucket)
-        send_kafka(fmt.Sprintf("[!] WARNING, Access Granted to bucket: %s", bucket))
+        mapD := map[string]interface{}{"type": "alert", "bucket": bucket, "raw_data": resp}
+        mapB, _ := json.Marshal(mapD)
+        if send_kafka(mapB) {
+            fmt.Println("Successfully written JSON alert to kafka.")
+        }
         write_logfile(resp)
         fmt.Println(resp)
     }
@@ -78,7 +82,7 @@ func write_logfile(l *s3.ListObjectsOutput) {
 }
 
 // write to local or remote kafka instance
-func send_kafka(s string) bool {
+func send_kafka(s []byte) bool {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
