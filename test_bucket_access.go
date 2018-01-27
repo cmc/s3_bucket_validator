@@ -1,8 +1,8 @@
-/* 
-   TODO:
-   1. If list successful with invalid keys, log an alert to KAFKA (currently its just writing to a file)
-   2. Integrate goroutines & channels to perform all s3 checks concurrently. save time, profit more.
-*/
+//cmc
+//TODO:
+//  1. Send full message to kafka as JSON vs single line - include bucket objects listed.
+//  2. Integrate goroutines & channels to perform all s3 checks concurrently. save time, profit more.
+
 package main
 
 import (
@@ -18,7 +18,7 @@ import (
     "github.com/Shopify/sarama"
 )
 
-// return list of all buckets with the key that we're using
+// return list of all buckets with the privileged internal account
 func get_buckets() []string {
     os.Setenv("AWS_PROFILE", "internal-privileged-account")
     s3svc := s3.New(session.New(), &aws.Config{Region: aws.String("us-east-1")})
@@ -34,7 +34,7 @@ func get_buckets() []string {
     return bucket_list
 }
 
-// return true/false on bucket access status
+// test whether we can list bucket objects with the unprivileged, external account
 func test_bucket_access(bucket string, region string) (*s3.ListObjectsOutput, error) {
     red := color.New(color.FgRed).PrintfFunc()
     yellow := color.New(color.FgYellow).PrintfFunc()
@@ -64,6 +64,8 @@ func test_bucket_access(bucket string, region string) (*s3.ListObjectsOutput, er
     return resp, err
 
 }
+
+// write to local log file
 func write_logfile(l *s3.ListObjectsOutput) {
     f, err := os.OpenFile("s3_results.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
     if err != nil {
@@ -74,6 +76,8 @@ func write_logfile(l *s3.ListObjectsOutput) {
     log.SetOutput(f)
     log.Println(l)
 }
+
+// write to local or remote kafka instance
 func send_kafka(s string) bool {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
@@ -120,7 +124,7 @@ func main() {
           //  fmt.Println(err)
         }
         if resp != nil {
-//            fmt.Println(resp)
+         //   fmt.Println(resp)
         }
     }
 }
